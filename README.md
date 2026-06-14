@@ -66,72 +66,71 @@ With R installed:
 # once
 install.packages(c("shiny","bslib","ggplot2","DBI","RSQLite","DT","childsds"))
 # start
-shiny::runApp(".", port = 3838)
+shiny::runApp(".", port = 5454)
 ```
 
-Then open http://127.0.0.1:3838
+Then open http://127.0.0.1:5454
+
+## Prebuilt image (GitHub Container Registry)
+
+A ready-to-run image is published automatically by GitHub Actions to:
+
+```
+ghcr.io/ndeluigi/kidgrowth:latest
+```
+
+This is the recommended way to deploy on a NAS: the image is **pulled**, not
+built on the device (building R packages on a low-power NAS can take 30+ minutes).
+
+> The first time the image is published, make the GHCR package **public** so it
+> can be pulled without authentication:
+> GitHub → your profile → **Packages** → `kidgrowth` → **Package settings** →
+> **Change visibility** → *Public*.
+
+## Deploy with Portainer (Stacks)
+
+Since we use a prebuilt image, the **Web editor** method is fastest (deploys in seconds).
+
+1. On the NAS, create the data folder (e.g. via File Station): `/volume1/docker/kidgrowth/data`
+2. In Portainer go to **Stacks → Add stack**, name it `kidgrowth`.
+3. **Build method**: **Web editor**, then paste the contents of `docker-compose.yml`.
+4. Click **Deploy the stack** (Portainer pulls `ghcr.io/ndeluigi/kidgrowth:latest`).
+5. Open **http://NAS-IP:5454**
+
+To update later: **Stacks → kidgrowth → Pull and redeploy** (or enable re-pull).
 
 ## Deploy on Synology (Container Manager)
 
-There are two options. Option **A** is the simplest.
+### Quick (prebuilt image)
 
-### A) docker-compose project (recommended)
+1. Create the folder `/volume1/docker/kidgrowth/data` (File Station).
+2. **Container Manager → Project → Create**, name `kidgrowth`, and paste the
+   `docker-compose.yml` (it references `ghcr.io/ndeluigi/kidgrowth:latest`).
+3. Start it, then open **http://NAS-IP:5454**.
 
-1. Copy the whole project folder to the NAS (e.g. via File Station to
-   `/docker/kidgrowth`).
-2. Open **Container Manager** → **Project** → **Create**.
-3. Set:
-   - **Project name**: `kidgrowth`
-   - **Path**: the uploaded folder (`/docker/kidgrowth`)
-   - **Source**: *Use the existing docker-compose.yml*
-4. Start it. On the first run the NAS **builds the image** (downloads the R
-   packages: this can take several minutes).
-5. Open **http://NAS-IP:3838**
+### Manual (SSH, prebuilt image)
 
-The database lives in `/docker/kidgrowth/data` and is preserved across restarts and
-updates.
+```bash
+sudo docker run -d --name kidgrowth \
+  -p 5454:5454 \
+  -v /volume1/docker/kidgrowth/data:/app/data \
+  --restart unless-stopped \
+  ghcr.io/ndeluigi/kidgrowth:latest
+```
 
-### B) Manual build via SSH
+### Build it yourself (optional)
 
 ```bash
 cd /volume1/docker/kidgrowth
 sudo docker build -t kidgrowth:latest .
-sudo docker run -d --name kidgrowth \
-  -p 3838:3838 \
-  -v /volume1/docker/kidgrowth/data:/app/data \
-  --restart unless-stopped \
-  kidgrowth:latest
 ```
 
-## Deploy with Portainer (Stacks)
-
-Because the image is **built from source**, deploy the stack from a Git
-repository so Portainer can build it for you.
-
-1. In Portainer go to **Stacks → Add stack** and name it `kidgrowth`.
-2. **Build method**: choose **Repository**.
-3. Fill in:
-   - **Repository URL**: `https://github.com/ndeluigi/kidgrowth`
-   - **Repository reference**: `refs/heads/main`
-   - **Compose path**: `docker-compose.yml`
-4. Click **Deploy the stack**. Portainer clones the repo, builds the image and
-   starts the container (the first build downloads R packages and takes a few
-   minutes).
-5. Open **http://HOST-IP:3838**
-
-> **Persistent data**: the compose file mounts `./data`, which Portainer resolves
-> inside the cloned stack directory. To make the database easier to find/back up,
-> you can replace the volume line in `docker-compose.yml` with an absolute host
-> path, e.g. `- /opt/kidgrowth/data:/app/data`, or a named volume.
-
-If you prefer the **Web editor** method (pasting the compose file), you must use a
-**pre-built image** instead of `build: .` — push the image to a registry and
-reference it with `image: <registry>/kidgrowth:latest`.
+Then change the `image:` line in `docker-compose.yml` to `kidgrowth:latest`.
 
 ## Notes
 
-- **Port**: defaults to `3838`. To change it, edit `ports` in
-  `docker-compose.yml` (e.g. `"8080:3838"`).
+- **Port**: defaults to `5454`. To change it, edit `ports` in
+  `docker-compose.yml` (e.g. `"8080:5454"`).
 - **Backup**: save the `data/growth.sqlite` file.
 - **HTTPS / external access**: use the DSM *Reverse Proxy*
   (Control Panel → Login Portal → Advanced → Reverse Proxy) to expose the app

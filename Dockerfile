@@ -35,6 +35,6 @@ COPY global.R ui.R server.R translations.R /app/
 RUN mkdir -p /app/data
 ENV GROWTH_DATA_DIR=/app/data
 
-EXPOSE 3838
+EXPOSE 5454
 
-CMD ["R", "-e", "shiny::runApp('/app', host = '0.0.0.0', port = 3838)"]
+CMD ["R", "-e", "shiny::runApp('/app', host = '0.0.0.0', port = 5454)"]

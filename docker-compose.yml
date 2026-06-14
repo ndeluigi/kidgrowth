@@ -1,10 +1,11 @@
 services:
   kidgrowth:
-    build: .
-    image: kidgrowth:latest
+    # Prebuilt image from GitHub Container Registry (no build on the NAS).
+    # Built automatically by .github/workflows/docker-publish.yml
+    image: ghcr.io/ndeluigi/kidgrowth:latest
     container_name: kidgrowth
     ports:
-      - "3838:3838"          # http://NAS-IP:3838
+      - "5454:5454"                                   # http://NAS-IP:5454
     volumes:
-      - ./data:/app/data     # persistent SQLite database
+      - /volume1/docker/kidgrowth/data:/app/data      # persistent SQLite database
     restart: unless-stopped
