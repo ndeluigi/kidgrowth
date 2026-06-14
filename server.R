@@ -12,8 +12,32 @@ build_app_ui <- function(lang, children, sel_child) {
           else if (nrow(children)) children$id[1] else NULL
   sex_choices <- stats::setNames(c("male", "female"), c(t("opt_male"), t("opt_female")))
 
+  # Plot with hover tooltip overlay (shows date + value when hovering a point)
+  plot_with_hover <- function(item) {
+    div(style = "position: relative;",
+        plotOutput(paste0("plot_", item), height = "460px",
+                   hover = hoverOpts(paste0("hover_", item),
+                                     delay = 60, delayType = "debounce")),
+        uiOutput(paste0("tip_", item)))
+  }
+
+  brand_title <- div(
+    class = "d-flex align-items-center",
+    style = "gap:9px; margin-right:1.75rem; line-height:1;",
+    tags$img(src = "assets/logo.svg", height = "32", width = "32",
+             alt = "Kid Growth", style = "border-radius:8px; display:block;"),
+    tags$span(
+      t("app_title"),
+      style = paste0("font-weight:800; font-size:1.25rem; letter-spacing:0.2px; ",
+                     "line-height:1; white-space:nowrap; ",
+                     "background:linear-gradient(90deg,#2c7fb8,#41b6a6); ",
+                     "-webkit-background-clip:text; background-clip:text; ",
+                     "-webkit-text-fill-color:transparent; color:#2c7fb8;")
+    )
+  )
+
   page_navbar(
-    title = t("app_title"),
+    title = brand_title,
     theme = bs_theme(version = 5, bootswatch = "minty", primary = "#2c7fb8"),
     fillable = FALSE,
 
@@ -51,9 +75,9 @@ build_app_ui <- function(lang, children, sel_child) {
         ),
         navset_card_tab(
           title = t("curves_card"),
-          nav_panel(t("tab_height"), plotOutput("plot_height", height = "460px")),
-          nav_panel(t("tab_weight"), plotOutput("plot_weight", height = "460px")),
-          nav_panel(t("tab_bmi"),    plotOutput("plot_bmi", height = "460px"))
+          nav_panel(t("tab_height"), plot_with_hover("height")),
+          nav_panel(t("tab_weight"), plot_with_hover("weight")),
+          nav_panel(t("tab_bmi"),    plot_with_hover("bmi"))
         )
       )
     ),
@@ -61,11 +85,14 @@ build_app_ui <- function(lang, children, sel_child) {
     nav_panel(
       title = t("nav_history"),
       card(
+        full_screen = TRUE,
         card_header(t("history_header")),
-        DT::DTOutput("meas_table"),
+        div(class = "text-muted small mb-2", t("edit_hint")),
+        div(style = "overflow-x: auto;", DT::DTOutput("meas_table")),
         div(class = "mt-2",
             actionButton("del_meas", t("btn_del_meas"),
-                         class = "btn-outline-danger btn-sm", icon = icon("trash")))
+                         class = "btn-outline-danger btn-sm",
+                         icon = icon("trash")))
       )
     ),
 
@@ -294,6 +321,40 @@ server <- function(input, output, session) {
   output$plot_weight <- renderPlot(draw_curve("weight", "weight_kg"))
   output$plot_bmi    <- renderPlot(draw_curve("bmi", "bmi"))
 
+  # Hover tooltip: shows the date + value (+ percentile) of the nearest data point
+  make_tip <- function(item, value_col, perc_col, unit) {
+    renderUI({
+      hover <- input[[paste0("hover_", item)]]
+      m <- meas_df()
+      if (is.null(hover) || is.null(m) || nrow(m) == 0) return(NULL)
+      pts <- data.frame(age = m$age, value = m[[value_col]],
+                        date = m$meas_date, perc = m[[perc_col]])
+      pts <- pts[!is.na(pts$value) & !is.na(pts$age), , drop = FALSE]
+      if (nrow(pts) == 0) return(NULL)
+      np <- nearPoints(pts, hover, xvar = "age", yvar = "value",
+                       threshold = 18, maxpoints = 1)
+      if (nrow(np) == 0) return(NULL)
+      left <- hover$coords_css$x + 14
+      top  <- hover$coords_css$y + 8
+      perc_txt <- if (is.na(np$perc[1])) "" else
+        sprintf("<br>%s %d", t("perc_label"), round(np$perc[1]))
+      div(
+        style = sprintf(
+          paste0("position:absolute; left:%.0fpx; top:%.0fpx; pointer-events:none;",
+                 " background:rgba(33,33,33,0.92); color:#fff; padding:6px 9px;",
+                 " border-radius:6px; font-size:12px; line-height:1.35; z-index:1000;",
+                 " box-shadow:0 2px 6px rgba(0,0,0,0.3); white-space:nowrap;"),
+          left, top),
+        HTML(sprintf("<b>%s</b><br>%.1f %s%s",
+                     fmt_date(np$date[1]), np$value[1], unit, perc_txt))
+      )
+    })
+  }
+
+  output$tip_height <- make_tip("height", "height_cm", "height_perc", "cm")
+  output$tip_weight <- make_tip("weight", "weight_kg", "weight_perc", "kg")
+  output$tip_bmi    <- make_tip("bmi", "bmi", "bmi_perc", "")
+
   # ---------------------------------------------------------------------------
   # Aggiunta misurazione
   # ---------------------------------------------------------------------------
@@ -337,9 +398,37 @@ server <- function(input, output, session) {
                     t("col_bmi"), t("col_p_bmi"))
     DT::datatable(
       out, rownames = FALSE, selection = "single",
-      options = list(pageLength = 25, dom = "tip",
+      # Only date (1), height (3) and weight (5) are editable; the rest are computed
+      editable = list(target = "cell", disable = list(columns = c(0, 2, 4, 6, 7, 8))),
+      options = list(pageLength = 10, dom = "tip", scrollX = TRUE,
                      columnDefs = list(list(visible = FALSE, targets = 0)))
     )
+  }, server = TRUE)
+
+  # Inline edit of a cell: update the corresponding measurement field in the DB
+  observeEvent(input$meas_table_cell_edit, {
+    info <- input$meas_table_cell_edit
+    m <- meas_df()
+    if (nrow(m) == 0 || info$row > nrow(m)) return()
+    id <- m$id[info$row]
+    val <- trimws(info$value)
+    col <- info$col  # 0-based: 1 = date, 3 = height, 5 = weight
+    if (col == 1) {
+      d <- as.Date(val, tryFormats = c("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"))
+      if (is.na(d)) { showNotification(t("notif_bad_date"), type = "warning"); return() }
+      update_measurement_field(id, "meas_date", as.character(d))
+    } else if (col %in% c(3, 5)) {
+      num <- suppressWarnings(as.numeric(gsub(",", ".", val)))
+      field <- if (col == 3) "height_cm" else "weight_kg"
+      if (is.na(num) && nzchar(val)) {
+        showNotification(t("notif_bad_number"), type = "warning"); return()
+      }
+      update_measurement_field(id, field, if (is.na(num)) NA else num)
+    } else {
+      return()
+    }
+    rv$meas <- rv$meas + 1
+    showNotification(t("notif_changes_saved"), type = "message")
   })
 
   observeEvent(input$del_meas, {

@@ -5,21 +5,20 @@
 <h1 align="center">kidgrowth</h1>
 
 <p align="center">
-  A multilingual R Shiny app to track your children's growth against the WHO standards.
+  A multilingual app to track your children's growth against the WHO standards.
 </p>
 
 <p align="center">
   <a href="https://github.com/ndeluigi/kidgrowth/actions/workflows/docker-publish.yml"><img alt="Build" src="https://github.com/ndeluigi/kidgrowth/actions/workflows/docker-publish.yml/badge.svg"></a>
   <a href="https://github.com/ndeluigi/kidgrowth/pkgs/container/kidgrowth"><img alt="GHCR" src="https://img.shields.io/badge/ghcr.io-kidgrowth-2496ed?logo=docker&logoColor=white"></a>
   <a href="https://github.com/ndeluigi/kidgrowth/releases"><img alt="Release" src="https://img.shields.io/github/v/release/ndeluigi/kidgrowth?color=2c7fb8"></a>
-  <img alt="R" src="https://img.shields.io/badge/R-Shiny-2c7fb8?logo=r">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
   <img alt="Languages" src="https://img.shields.io/badge/i18n-6%20languages-blueviolet">
 </p>
 
 ---
 
-A **multilingual R Shiny** app (WHO growth charts) to track your children's height, weight and BMI
+A **multilingual app** (WHO growth charts) to track your children's height, weight and BMI
 and compare them against the **WHO growth standards** (0-19 years).
 
 **Available languages** (selectable from the top bar, switched in real time):

@@ -67,6 +67,9 @@ db_init <- function() {
 # Inizializza il database all'avvio dell'app (crea tabelle + dati di esempio)
 db_init()
 
+# Espone la cartella assets/ (logo) come risorsa statica per l'app
+if (dir.exists("assets")) shiny::addResourcePath("assets", "assets")
+
 # -----------------------------------------------------------------------------
 # Operazioni sui figli
 # -----------------------------------------------------------------------------
@@ -116,6 +119,16 @@ add_measurement <- function(child_id, meas_date, height_cm, weight_kg) {
 delete_measurement <- function(id) {
   con <- db_connect(); on.exit(dbDisconnect(con))
   dbExecute(con, "DELETE FROM measurements WHERE id = ?", params = list(id))
+}
+
+# Update a single editable field (meas_date, height_cm or weight_kg) of a
+# measurement. Returns TRUE on success, FALSE if the value is invalid.
+update_measurement_field <- function(id, field, value) {
+  if (!field %in% c("meas_date", "height_cm", "weight_kg")) return(FALSE)
+  con <- db_connect(); on.exit(dbDisconnect(con))
+  dbExecute(con, sprintf("UPDATE measurements SET %s = ? WHERE id = ?", field),
+            params = list(value, id))
+  TRUE
 }
 
 # -----------------------------------------------------------------------------

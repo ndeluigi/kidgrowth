@@ -30,6 +30,7 @@ RUN install2.r --error --skipinstalled \
 # Codice applicazione
 WORKDIR /app
 COPY global.R ui.R server.R translations.R /app/
+COPY assets /app/assets
 
 # Cartella dati persistente (montata come volume)
 RUN mkdir -p /app/data
