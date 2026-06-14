@@ -1,0 +1,7 @@
+data/
+*.sqlite
+_test*.R
+_plot_*.png
+.Rproj.user
+.Rhistory
+.RData

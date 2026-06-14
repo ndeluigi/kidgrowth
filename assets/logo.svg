@@ -1,0 +1,53 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="kidgrowth logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2c7fb8"/>
+      <stop offset="1" stop-color="#41b6a6"/>
+    </linearGradient>
+    <clipPath id="panel">
+      <rect x="52" y="48" width="156" height="160" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <!-- Badge background -->
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#bg)"/>
+
+  <!-- Plot panel -->
+  <rect x="52" y="48" width="156" height="160" rx="14" fill="#ffffff"/>
+
+  <g clip-path="url(#panel)">
+    <!-- Grid -->
+    <g stroke="#dde3e8" stroke-width="2">
+      <line x1="78"  y1="48" x2="78"  y2="208"/>
+      <line x1="104" y1="48" x2="104" y2="208"/>
+      <line x1="130" y1="48" x2="130" y2="208"/>
+      <line x1="156" y1="48" x2="156" y2="208"/>
+      <line x1="182" y1="48" x2="182" y2="208"/>
+      <line x1="52" y1="74"  x2="208" y2="74"/>
+      <line x1="52" y1="100" x2="208" y2="100"/>
+      <line x1="52" y1="126" x2="208" y2="126"/>
+      <line x1="52" y1="152" x2="208" y2="152"/>
+      <line x1="52" y1="178" x2="208" y2="178"/>
+    </g>
+
+    <!-- WHO percentile curves (steep then flattening, gently fanning) -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M58 168 C 84 132, 146 92, 204 74"  stroke="#b23a6f" stroke-width="6"/>
+      <path d="M58 176 C 84 146, 146 112, 204 96"  stroke="#e08a3c" stroke-width="6"/>
+      <path d="M58 184 C 84 160, 146 134, 204 120" stroke="#2e8b7f" stroke-width="7"/>
+      <path d="M58 192 C 84 174, 146 156, 204 146" stroke="#e08a3c" stroke-width="6"/>
+      <path d="M58 200 C 84 188, 146 178, 204 170" stroke="#b23a6f" stroke-width="6"/>
+    </g>
+
+    <!-- Child's measured line tracking the 50th percentile -->
+    <path d="M72 176 L104 154 L143 140 L180 123"
+          stroke="#0b3d91" stroke-width="5"
+          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <g fill="#ffffff" stroke="#0b3d91" stroke-width="3">
+      <circle cx="72"  cy="176" r="6"/>
+      <circle cx="104" cy="154" r="6"/>
+      <circle cx="143" cy="140" r="6"/>
+      <circle cx="180" cy="123" r="7"/>
+    </g>
+  </g>
+</svg>

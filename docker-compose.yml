@@ -1,0 +1,10 @@
+services:
+  kidgrowth:
+    build: .
+    image: kidgrowth:latest
+    container_name: kidgrowth
+    ports:
+      - "3838:3838"          # http://NAS-IP:3838
+    volumes:
+      - ./data:/app/data     # persistent SQLite database
+    restart: unless-stopped

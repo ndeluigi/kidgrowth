@@ -1,0 +1,7 @@
+data/
+_test*.R
+_plot_*.png
+*.sqlite
+.git
+.gitignore
+README.md
